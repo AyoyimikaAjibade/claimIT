@@ -17,8 +17,7 @@ schema_view = get_schema_view(
    ),
    public=True,
    authentication_classes=[],
-   permission_classes=(permissions.AllowAny,),
-   url=getattr(settings, 'SWAGGER_URL', None)
+   permission_classes=(permissions.AllowAny,)
 )
 
 urlpatterns = [
