@@ -49,5 +49,4 @@ media/
 *.csv
 *.pkl
 staticfiles/
-static/
 *.h5
