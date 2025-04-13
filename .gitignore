@@ -45,8 +45,7 @@ venv/
 *.pyc
 __pycache__/
 
-media/
+
 *.csv
 *.pkl
-staticfiles/
 *.h5
