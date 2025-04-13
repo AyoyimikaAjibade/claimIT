@@ -10,10 +10,12 @@ services:
         value: claimIT.settings
       - key: DJANGO_SECRET_KEY
         fromEnv: DJANGO_SECRET_KEY
+      - key: JWT_SECRET
+        fromEnv: JWT_SECRET
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: "claimIT_backend.onrender.com,localhost"
+        value: "claimIT_backend.onrender.com,localhost,127.0.0.1"
       - key: DB_NAME
         fromEnv: DB_NAME
       - key: DB_USER
@@ -25,4 +27,6 @@ services:
       - key: DB_PORT
         value: "5432"
       - key: CORS_ALLOWED_ORIGINS
-        value: "[https://your-frontend-domain.com](https://your-frontend-domain.com),http://localhost:3000"
+        value: "http://localhost:3000"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://claimIT_backend.onrender.com"
