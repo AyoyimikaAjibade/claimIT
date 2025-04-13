@@ -1,0 +1,384 @@
+{
+  "info": {
+    "name": "claimIT API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "exec": [
+          "// Auto-refresh token if expired",
+          "if (pm.variables.get('access_token')) {",
+          "    const tokenExp = pm.variables.get('token_expiry');",
+          "    if (tokenExp && new Date().getTime() > tokenExp) {",
+          "        const refreshToken = pm.variables.get('refresh_token');",
+          "        if (refreshToken) {",
+          "            pm.sendRequest({",
+          "                url: pm.variables.get('base_url') + '/api/auth/token/refresh/',",
+          "                method: 'POST',",
+          "                header: { 'Content-Type': 'application/json' },",
+          "                body: { mode: 'raw', raw: JSON.stringify({ refresh: refreshToken }) }",
+          "            }, function (err, res) {",
+          "                if (!err && res.code === 200) {",
+          "                    pm.variables.set('access_token', res.json().access);",
+          "                    const exp = new Date().getTime() + 55*60*1000; // 55 minutes",
+          "                    pm.variables.set('token_expiry', exp);",
+          "                }",
+          "            });",
+          "        }",
+          "    }",
+          "}"
+        ],
+        "type": "text/javascript"
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    pm.variables.set('access_token', pm.response.json().access);",
+                  "    pm.variables.set('refresh_token', pm.response.json().refresh);",
+                  "    const exp = new Date().getTime() + 55*60*1000; // 55 minutes",
+                  "    pm.variables.set('token_expiry', exp);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"username\": \"testuser\",\n\t\"email\": \"test@example.com\",\n\t\"password\": \"testpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Extract tokens from response and set as environment variables",
+                  "var jsonData = pm.response.json();",
+                  "if (pm.response.code === 200) {",
+                  "    // Set the access token as environment variable",
+                  "    pm.environment.set('access_token', jsonData.access);",
+                  "    console.log('Access token saved to environment');",
+                  "",
+                  "    // Set the refresh token as environment variable",
+                  "    pm.environment.set('refresh_token', jsonData.refresh);",
+                  "    console.log('Refresh token saved to environment');",
+                  "",
+                  "    // Set token expiry (55 minutes from now)",
+                  "    var expiryTime = new Date();",
+                  "    expiryTime.setMinutes(expiryTime.getMinutes() + 55);",
+                  "    pm.environment.set('token_expiry', expiryTime.getTime());",
+                  "    console.log('Token expiry set to: ' + expiryTime);",
+                  "} else {",
+                  "    console.log('Login failed. Status code: ' + pm.response.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"username\": \"testuser\",\n\t\"password\": \"testpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/token/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "token", "refresh", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"refresh\": \"your_refresh_token_here\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"refresh_token\": \"your_refresh_token_here\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Claims",
+      "item": [
+        {
+          "name": "List Claims",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/claims/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "claims", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Claim",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/claims/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "claims", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"disaster_type\": \"wildfire\",\n\t\"property_type\": \"house\",\n\t\"description\": \"House severely damaged by wildfire, requiring extensive repairs\",\n\t\"estimated_loss\": 50000,\n\t\"insurance_policy_number\": \"POL123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Claim Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/claims/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "claims", "1", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Claim",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/claims/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "claims", "1", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"damage_description\": \"Updated damage description\",\n\t\"estimated_loss\": 75000\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User Profiles",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user-profiles/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-profiles", ""]
+            }
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/user-profiles/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "user-profiles", "1", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"phone_number\": \"+1234567890\",\n\t\"address\": \"123 Main St, City, State\",\n\t\"emergency_contact\": \"John Doe +1987654321\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Disaster Updates",
+      "item": [
+        {
+          "name": "List Disaster Updates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/disaster-updates/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "disaster-updates", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Disaster Update",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/disaster-updates/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "disaster-updates", ""]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"disaster_type\": \"wildfire\",\n\t\"title\": \"New Wildfire Alert\",\n\t\"description\": \"Active wildfire in the area\",\n\t\"location\": \"Northern California\",\n\t\"severity\": 3,\n\t\"source\": \"FEMA\",\n\t\"url\": \"https://example.com/alert\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Disaster Update Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/disaster-updates/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "disaster-updates", "1", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
