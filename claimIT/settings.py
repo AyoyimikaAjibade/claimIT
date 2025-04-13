@@ -123,14 +123,19 @@ REST_FRAMEWORK = {
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='https://claimIT_frontend.onrender.com,http://localhost:3000', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='[https://claimit.onrender.com](https://claimit.onrender.com),https://claimIT_backend.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://claimit.onrender.com,https://claimIT_backend.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Whitenoise storage
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

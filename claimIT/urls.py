@@ -25,4 +25,12 @@ urlpatterns = [
     path('api/', include('claimIT_backend.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+]
+
+# Add static and media URL patterns
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # In production, static files are served by whitenoise middleware
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
