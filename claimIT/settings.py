@@ -27,7 +27,7 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='claimIT_backend.onrender.com,localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='claimit.onrender.com, claimIT_backend.onrender.com,localhost,127.0.0.1', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 # Application definition
@@ -123,7 +123,7 @@ REST_FRAMEWORK = {
 
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='https://claimIT_frontend.onrender.com,http://localhost:3000', cast=lambda v: [s.strip() for s in v.split(',')])
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://claimIT_backend.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='[https://claimit.onrender.com](https://claimit.onrender.com),https://claimIT_backend.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
@@ -183,3 +183,5 @@ SWAGGER_SETTINGS = {
     'REFETCH_SCHEMA_WITH_AUTH': True,
     'REFETCH_SCHEMA_ON_LOGOUT': True,
 }
+# Set the base URL for Swagger in production
+SWAGGER_URL = '[https://claimit.onrender.com](https://claimit.onrender.com)' if not DEBUG else None
