@@ -15,10 +15,10 @@ from django.conf.urls.static import static
 
 # Create a router for our viewsets
 router = DefaultRouter()
-router.register(r'users', UserViewSet)
+# router.register(r'users', UserViewSet)
 router.register(r'user-profiles', UserProfileViewSet, basename='user-profiles')
-router.register(r'disaster-updates', DisasterUpdateViewSet)
 router.register(r'claims', ClaimViewSet)
+router.register(r'disaster-updates', DisasterUpdateViewSet)
 
 # Define the URL patterns
 urlpatterns = [

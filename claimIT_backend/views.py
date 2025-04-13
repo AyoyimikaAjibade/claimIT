@@ -30,7 +30,14 @@ class RegisterView(viewsets.ViewSet):
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        'user': UserSerializer(),
+                        'user': openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                'id': openapi.Schema(type=openapi.TYPE_INTEGER),
+                                'username': openapi.Schema(type=openapi.TYPE_STRING),
+                                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                            }
+                        ),
                         'refresh': openapi.Schema(type=openapi.TYPE_STRING),
                         'access': openapi.Schema(type=openapi.TYPE_STRING),
                     }
@@ -123,12 +130,18 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     """
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ['get', 'put', 'patch', 'head', 'options'] 
 
     def get_queryset(self):
-        return UserProfile.objects.filter(user=self.request.user)
+        # Check if user is authenticated before filtering
+        if self.request.user.is_authenticated:
+            return UserProfile.objects.filter(user=self.request.user)
+        # Return empty queryset for anonymous users (for Swagger)
+        return UserProfile.objects.none()
 
     def get_object(self):
+        # Check if user is authenticated
+        if not self.request.user.is_authenticated:
+            raise NotAuthenticated("Authentication required")
         return UserProfile.objects.get(user=self.request.user)
 
     @swagger_auto_schema(
@@ -156,7 +169,11 @@ class ClaimViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Claim.objects.filter(user=self.request.user)
+        # Check if user is authenticated before filtering
+        if self.request.user.is_authenticated:
+            return Claim.objects.filter(user=self.request.user)
+        # Return empty queryset for anonymous users (for Swagger)
+        return Claim.objects.none()
 
     @swagger_auto_schema(
         operation_description="Create a new insurance claim",
@@ -201,3 +218,8 @@ class DisasterUpdateViewSet(viewsets.ModelViewSet):
     queryset = DisasterUpdate.objects.all()
     serializer_class = DisasterUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # For Swagger documentation, return all disaster updates
+        # This is safe since disaster updates are not user-specific
+        return DisasterUpdate.objects.all()
