@@ -46,7 +46,7 @@ venv/
 __pycache__/
 
 # Generated files
-staticfiles/
+# staticfiles/
 media/
 *.csv
 *.pkl
