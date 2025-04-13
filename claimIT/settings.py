@@ -188,3 +188,6 @@ SWAGGER_SETTINGS = {
     'REFETCH_SCHEMA_WITH_AUTH': True,
     'REFETCH_SCHEMA_ON_LOGOUT': True,
 }
+
+# Set the base URL for Swagger in production
+SWAGGER_URL = config('SWAGGER_URL', default=None)
