@@ -155,6 +155,25 @@
         },
         {
           "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    // Clear the tokens from environment",
+                  "    pm.environment.unset('access_token');",
+                  "    pm.environment.unset('refresh_token');",
+                  "    pm.environment.unset('token_expiry');",
+                  "    console.log('Logged out successfully and cleared tokens');",
+                  "} else {",
+                  "    console.log('Logout failed: ' + pm.response.json().error);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -174,7 +193,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n\t\"refresh_token\": \"your_refresh_token_here\"\n}"
+              "raw": "{\n\t\"refresh_token\": \"{{refresh_token}}\"\n}"
             }
           }
         }

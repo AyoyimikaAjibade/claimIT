@@ -97,11 +97,15 @@ DATABASES = {
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    'ROTATE_REFRESH_TOKENS': False,  # Simplified token handling
-    'BLACKLIST_AFTER_ROTATION': False,  # Simplified token handling
+    'ROTATE_REFRESH_TOKENS': True,  # Enable token rotation
+    'BLACKLIST_AFTER_ROTATION': True,  # Blacklist tokens after rotation
+    'UPDATE_LAST_LOGIN': True,  # Update last login timestamp
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': config('DJANGO_SECRET_KEY', default=SECRET_KEY),
     'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
 }
 JWT_SECRET = config('JWT_SECRET')
 

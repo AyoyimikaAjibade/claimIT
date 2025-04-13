@@ -83,10 +83,24 @@ class LogoutView(viewsets.ViewSet):
         try:
             refresh_token = request.data["refresh_token"]
             token = RefreshToken(refresh_token)
+            # Add token to blacklist
             token.blacklist()
-            return Response({"message": "Successfully logged out"}, status=status.HTTP_200_OK)
+            
+            # Return success response
+            return Response(
+                {"message": "Successfully logged out"}, 
+                status=status.HTTP_200_OK
+            )
+        except KeyError:
+            return Response(
+                {"error": "Refresh token is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """
