@@ -17,8 +17,7 @@ schema_view = get_schema_view(
    ),
    public=True,
    authentication_classes=[],
-   permission_classes=(permissions.AllowAny,),
-   url=settings.SWAGGER_URL if hasattr(settings, 'SWAGGER_URL') else None
+   permission_classes=(permissions.AllowAny,)
 )
 
 urlpatterns = [
@@ -26,12 +25,4 @@ urlpatterns = [
     path('api/', include('claimIT_backend.urls')),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-]
-
-# Add static and media URL patterns
-if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-else:
-    # In production, static files are served by whitenoise middleware
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
