@@ -14,20 +14,22 @@ const NavbarComponent = () => {
   };
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" className="mb-4">
-      <Container fluid>
+    <Navbar expand="lg" className="auth-header">
+      <Container>
         <Navbar.Brand as={Link} to="/dashboard">
           <FaUser className="me-2" />
           claimIT
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="navbar-collapse" />
         <Navbar.Collapse id="navbar-collapse">
-          <Nav className="me-auto">
-            <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
-            <Nav.Link as={Link} to="/claims">Claims</Nav.Link>
-            <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-            <Nav.Link as={Link} to="/disaster-updates">Disaster Updates</Nav.Link>
-          </Nav>
+          {authToken && (
+            <Nav className="me-auto">
+              <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
+              <Nav.Link as={Link} to="/claims">Claims</Nav.Link>
+              <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
+              <Nav.Link as={Link} to="/disaster-updates">Disaster Updates</Nav.Link>
+            </Nav>
+          )}
           <Nav>
             {authToken ? (
               <Button variant="outline-light" onClick={handleLogout} className="ms-2">
@@ -36,10 +38,10 @@ const NavbarComponent = () => {
               </Button>
             ) : (
               <>
-                <Nav.Link as={Link} to="/login" className="text-white me-3">
+                <Nav.Link as={Link} to="/login" className="me-3">
                   Login
                 </Nav.Link>
-                <Nav.Link as={Link} to="/register" className="text-white">
+                <Nav.Link as={Link} to="/register">
                   Register
                 </Nav.Link>
               </>
