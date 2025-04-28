@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import '../styles/auth.css';
+import Footer from './Footer';
 
 const Login = () => {
   const { saveAuthToken } = useContext(AuthContext);
@@ -38,8 +39,8 @@ const Login = () => {
         <Container>
           <Row className="justify-content-center mb-4">
             <Col md={8} className="text-center">
-              <h1 className="display-4 fw-bold text-primary">Welcome to claimIT</h1>
-              <p className="lead fs-4">Streamline Your Disaster Insurance Claim</p>
+              <h1 className="display-4 fw-bold text-dark">Welcome to claimIT</h1>
+              <p className="fs-4 text-dark">Streamline Your Disaster Insurance Claim</p>
             </Col>
           </Row>
           
@@ -55,6 +56,7 @@ const Login = () => {
                 )}
 
                 <Form onSubmit={handleLogin} className="auth-form">
+
                   <Form.Group className="form-group">
                     <Form.Label className="d-flex align-items-center">
                       <FaUser className="me-2" />
@@ -65,7 +67,7 @@ const Login = () => {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       required
-                      placeholder="Enter your username"
+                      placeholder="Enter your username" 
                     />
                   </Form.Group>
 
@@ -83,7 +85,7 @@ const Login = () => {
                     />
                   </Form.Group>
 
-                  <Button variant="primary" type="submit" className="auth-btn auth-btn-primary">
+                  <Button variant="warning" type="submit" className="auth-btn auth-btn-warning">
                     Login
                   </Button>
                   <Link to="/register" className="btn auth-btn auth-btn-outline">
@@ -96,40 +98,7 @@ const Login = () => {
         </Container>
       </main>
 
-      <footer className="auth-footer mt-auto">
-        <Container>
-          <Row>
-            <Col md={4}>
-              <h5>About</h5>
-              <ul className="auth-footer-links">
-                <li><Link to="/about">About claimIT</Link></li>
-                <li><Link to="/privacy">Privacy Policy</Link></li>
-                <li><Link to="/terms">Terms of Use</Link></li>
-              </ul>
-            </Col>
-            <Col md={4}>
-              <h5>Customer Service</h5>
-              <ul className="auth-footer-links">
-                <li><Link to="/faq">FAQ</Link></li>
-                <li><Link to="/contact">Contact Us</Link></li>
-                <li><Link to="/support">Support</Link></li>
-              </ul>
-            </Col>
-            <Col md={4}>
-              <h5>Keep In Touch</h5>
-              <ul className="auth-footer-links">
-                <li><a href="mailto:support@claimit.com">support@claimit.com</a></li>
-                <li><a href="tel:+18002441180">(800) 244-1180</a></li>
-              </ul>
-            </Col>
-          </Row>
-          <Row className="mt-4">
-            <Col className="text-center">
-              <p className="mb-0">&copy; 2024 claimIT | All Rights Reserved</p>
-            </Col>
-          </Row>
-        </Container>
-      </footer>
+      <Footer />
     </div>
   );
 };

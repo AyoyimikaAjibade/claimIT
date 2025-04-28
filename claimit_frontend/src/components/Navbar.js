@@ -4,11 +4,27 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { FaUser, FaSignOutAlt } from 'react-icons/fa';
 import axios from 'axios';
+import '../styles/Navbar.css';
 
-const NavbarComponent = () => {
+const NavbarComponent = ({ isAuthenticated }) => {
   const { authToken, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      if (offset > 50) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -22,12 +38,11 @@ const NavbarComponent = () => {
               }
             }
           );
-          // The API returns a list, and we want the first (and only) profile
           if (response.data && response.data.length > 0) {
             setUsername(response.data[0].user.username);
           }
-        } catch (err) {
-          console.error('Error fetching user profile:', err);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
         }
       }
     };
@@ -40,7 +55,6 @@ const NavbarComponent = () => {
     navigate('/login');
   };
 
-  // Function to capitalize the first letter of each word
   const capitalizeUsername = (name) => {
     if (!name) return '';
     return name.split(' ')
@@ -49,42 +63,53 @@ const NavbarComponent = () => {
   };
 
   return (
-    <Navbar expand="lg" className="auth-header">
-      <Container>
-        <Navbar.Brand as={Link} to="/dashboard">
-          <FaUser className="me-2" />
-          claimIT
+    <Navbar 
+      expand="lg" 
+      className={`fixed-top ${scrolled ? 'navbar-scrolled' : ''}`}
+    >
+      <Container fluid={isAuthenticated} className={isAuthenticated ? 'px-md-4' : ''}>
+        <Navbar.Brand as={Link} to="/dashboard" className="d-flex align-items-center">
+          <span className="brand-text">claimIT</span>
         </Navbar.Brand>
+        
         <Navbar.Toggle aria-controls="navbar-collapse" />
         <Navbar.Collapse id="navbar-collapse">
-          {authToken && (
-            <Nav className="me-auto">
-              <Nav.Link as={Link} to="/dashboard">Dashboard</Nav.Link>
-              <Nav.Link as={Link} to="/claims">Claims</Nav.Link>
-              <Nav.Link as={Link} to="/profile">Profile</Nav.Link>
-              <Nav.Link as={Link} to="/disaster-updates">Disaster Updates</Nav.Link>
-            </Nav>
-          )}
-          <Nav>
+          <Nav className="ms-auto">
             {authToken ? (
-              <>
-                <div className="welcome-message me-3">
-                  <span className="text-white">Welcome, <strong style={{ fontWeight: 800, fontSize: '1.1rem' }}>{capitalizeUsername(username)}</strong></span>
+              <div className="d-flex align-items-center">
+                <div className="user-profile me-3">
+                  <FaUser className="user-icon" />
+                  <span className="username">
+                    {capitalizeUsername(username)}
+                  </span>
                 </div>
-                <Button variant="outline-light" onClick={handleLogout} className="ms-2">
+                <Button 
+                  variant="outline-primary" 
+                  onClick={handleLogout}
+                  className="logout-btn"
+                >
                   <FaSignOutAlt className="me-2" />
                   Logout
                 </Button>
-              </>
+              </div>
             ) : (
-              <>
-                <Nav.Link as={Link} to="/login" className="me-3">
+              <div className="auth-buttons">
+                <Button 
+                  as={Link} 
+                  to="/login" 
+                  variant="outline-primary"
+                  className="me-2"
+                >
                   Login
-                </Nav.Link>
-                <Nav.Link as={Link} to="/register">
+                </Button>
+                <Button 
+                  as={Link} 
+                  to="/register" 
+                  variant="primary"
+                >
                   Register
-                </Nav.Link>
-              </>
+                </Button>
+              </div>
             )}
           </Nav>
         </Navbar.Collapse>

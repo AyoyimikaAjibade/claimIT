@@ -1,0 +1,165 @@
+/* Navbar Base Styles */
+.navbar {
+  background: linear-gradient(135deg, #7A133E 0%, #5f0f2f 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.navbar-scrolled {
+  background: linear-gradient(135deg, #7A133E 0%, #5f0f2f 100%);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Brand Styles */
+.navbar-brand {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-text {
+  font-size: 1.75rem;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Navigation Items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.2s ease;
+  margin: 0 0.25rem;
+  border-radius: 0.375rem;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.nav-item:hover {
+  background-color: var(--gray-100);
+  color: var(--primary);
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #ffffff !important;
+}
+
+.nav-icon {
+  margin-right: 0.5rem;
+}
+
+.nav-link .nav-icon {
+  margin-right: 0.5rem;
+}
+
+/* User Profile Section */
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 2rem;
+  color: #ffffff;
+}
+
+.user-icon {
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  color: #ffffff;
+}
+
+.username {
+  font-weight: 500;
+  color: #ffffff;
+}
+
+/* Authentication Buttons */
+.auth-buttons .btn {
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.auth-buttons .btn-outline-primary {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.auth-buttons .btn-outline-primary:hover {
+  background-color: #ffffff;
+  color: #7A133E;
+}
+
+.auth-buttons .btn-primary {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #7A133E;
+}
+
+.auth-buttons .btn-primary:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.9);
+  color: #7A133E;
+}
+
+.logout-btn {
+  padding: 0.5rem 1.5rem;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.logout-btn:hover {
+  background-color: #ffffff;
+  color: #7A133E;
+}
+
+/* Responsive Design */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background-color: #7A133E;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 0.5rem;
+  }
+  
+  .nav-item {
+    margin: 0.25rem 0;
+  }
+  
+  .user-profile {
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.navbar-scrolled {
+  animation: slideDown 0.3s ease-out forwards;
+}

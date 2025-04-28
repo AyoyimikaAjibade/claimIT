@@ -1,60 +1,203 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { 
-  FaHome, FaFileAlt, FaUser, FaChartLine, 
-  FaNewspaper, FaCog, FaSignOutAlt 
+  FaHome, 
+  FaClipboardList, 
+  FaFileInvoiceDollar,
+  FaUserCircle,
+  FaBell,
+  FaCog,
+  FaSignOutAlt,
+  FaChevronDown,
+  FaChevronRight,
+  FaExclamationTriangle,
+  FaBook,
+  FaQuestionCircle,
+  FaBars
 } from 'react-icons/fa';
+import '../styles/Sidebar.css';
 
 const Sidebar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useContext(AuthContext);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState({});
+
+  const menuGroups = [
+    {
+      title: 'Main',
+      items: [
+        { 
+          path: '/dashboard', 
+          icon: FaHome, 
+          label: 'Dashboard'
+        },
+        {
+          label: 'Claims',
+          icon: FaClipboardList,
+          submenu: [
+            { path: '/claims', label: 'View Claims', icon: FaFileInvoiceDollar },
+            { path: '/claim/new', label: 'New Claim', icon: FaFileInvoiceDollar }
+          ]
+        }
+      ]
+    },
+    {
+      title: 'Updates',
+      items: [
+        {
+          path: '/disaster-updates',
+          icon: FaExclamationTriangle,
+          label: 'Disaster Updates'
+        },
+        {
+          path: '/notifications',
+          icon: FaBell,
+          label: 'Notifications',
+          badge: '3' // Optional: Add badge for unread notifications
+        }
+      ]
+    },
+    {
+      title: 'Resources',
+      items: [
+        {
+          path: '/resources',
+          icon: FaBook,
+          label: 'Resources'
+        },
+        {
+          path: '/help',
+          icon: FaQuestionCircle,
+          label: 'Help & Support'
+        }
+      ]
+    },
+    {
+      title: 'Account',
+      items: [
+        {
+          path: '/profile',
+          icon: FaUserCircle,
+          label: 'Profile'
+        },
+        {
+          path: '/settings',
+          icon: FaCog,
+          label: 'Settings'
+        }
+      ]
+    }
+  ];
+
+  const toggleSubmenu = (menuLabel) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [menuLabel]: !prev[menuLabel]
+    }));
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const toggleMobileSidebar = () => {
+    setIsMobileOpen(!isMobileOpen);
+  };
+
+  const renderMenuItem = (item) => {
+    if (item.submenu) {
+      const isExpanded = expandedMenus[item.label];
+      return (
+        <div key={item.label} className="nav-item">
+          <button
+            className="nav-link"
+            onClick={() => toggleSubmenu(item.label)}
+          >
+            <div className="menu-item-content">
+              <item.icon className="nav-icon" />
+              <span>{item.label}</span>
+            </div>
+            <FaChevronRight className={`dropdown-arrow ${isExpanded ? 'open' : ''}`} />
+          </button>
+          {isExpanded && (
+            <div className="submenu">
+              {item.submenu.map(subItem => (
+                <Link
+                  key={subItem.path}
+                  to={subItem.path}
+                  className={`nav-link ${location.pathname === subItem.path ? 'active' : ''}`}
+                  onClick={() => setIsMobileOpen(false)}
+                >
+                  <div className="menu-item-content">
+                    <subItem.icon className="nav-icon" />
+                    <span>{subItem.label}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <li className="nav-item" key={item.path}>
+        <Link
+          to={item.path}
+          className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
+          onClick={() => setIsMobileOpen(false)}
+        >
+          <div className="menu-item-content">
+            <item.icon className="nav-icon" />
+            <span>{item.label}</span>
+          </div>
+          {item.badge && (
+            <span className="menu-badge">{item.badge}</span>
+          )}
+        </Link>
+      </li>
+    );
+  };
+
   return (
-    <nav className="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
-      <div className="position-sticky pt-3">
-        <ul className="nav flex-column">
-          <li className="nav-item">
-            <Link to="/dashboard" className="nav-link active">
-              <FaHome className="me-2" />
-              Dashboard
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/claims" className="nav-link">
-              <FaFileAlt className="me-2" />
-              Claims
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/claim/new" className="nav-link">
-              <FaChartLine className="me-2" />
-              New Claim
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/profile" className="nav-link">
-              <FaUser className="me-2" />
-              Profile
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/disaster-updates" className="nav-link">
-              <FaNewspaper className="me-2" />
-              Disaster Updates
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/settings" className="nav-link">
-              <FaCog className="me-2" />
-              Settings
-            </Link>
-          </li>
-          <li className="nav-item mt-4">
-            <Link to="/logout" className="nav-link text-danger">
-              <FaSignOutAlt className="me-2" />
+    <>
+      <button
+        className="d-md-none btn btn-link sidebar-toggle"
+        onClick={toggleMobileSidebar}
+        aria-label="Toggle sidebar"
+      >
+        <FaBars />
+      </button>
+
+      <div className={`sidebar ${isMobileOpen ? 'show' : ''}`}>
+        <div className="position-sticky">
+          {menuGroups.map((group) => (
+            <div key={group.title} className="menu-group">
+              <h6 className="sidebar-heading">
+                {group.title}
+              </h6>
+              <ul className="nav flex-column">
+                {group.items.map(renderMenuItem)}
+              </ul>
+            </div>
+          ))}
+          
+          <div className="menu-group mt-auto">
+            <button
+              onClick={handleLogout}
+              className="nav-link text-danger border-0 bg-transparent w-100 text-start d-flex align-items-center"
+            >
+              <FaSignOutAlt className="nav-icon" />
               Logout
-            </Link>
-          </li>
-        </ul>
+            </button>
+          </div>
+        </div>
       </div>
-    </nav>
+    </>
   );
 };
 
