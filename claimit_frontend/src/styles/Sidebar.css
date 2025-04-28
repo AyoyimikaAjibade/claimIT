@@ -65,13 +65,72 @@
 
 /* Submenu styles */
 .submenu {
-  margin-left: 0;
+  margin: 0.25rem 0;
   background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  overflow: hidden;
 }
 
 .submenu .nav-link {
-  padding-left: 3.75rem;
-  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  border-left: none;
+  margin: 0.125rem 0;
+}
+
+.submenu .nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  transform: translateX(4px);
+}
+
+.submenu .nav-link.active {
+  background-color: rgba(0, 0, 0, 0.08);
+  font-weight: 500;
+}
+
+/* Parent menu item with submenu */
+.nav-link.has-submenu {
+  position: relative;
+}
+
+.nav-link.has-submenu .dropdown-arrow {
+  margin-left: auto;
+  font-size: 0.8rem;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.nav-link.has-submenu .dropdown-arrow.open {
+  transform: rotate(90deg);
+}
+
+/* Ensure submenu text is visible */
+.submenu .menu-item-content {
+  opacity: 0.9;
+}
+
+.submenu .nav-link:hover .menu-item-content,
+.submenu .nav-link.active .menu-item-content {
+  opacity: 1;
+}
+
+/* Animation for submenu */
+.submenu {
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Dropdown arrow styles */
@@ -88,14 +147,27 @@
 
 /* Hover and active states */
 .nav-link:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 0, 0, 0.05);
   border-left-color: #000000;
+}
+
+.nav-link:hover .nav-icon,
+.nav-link:hover span {
+  color: #000000;
+  opacity: 1;
+  font-weight: 500;
 }
 
 .nav-link.active {
   background-color: rgba(0, 0, 0, 0.05);
   border-left-color: #000000;
-  font-weight: 500;
+}
+
+.nav-link.active .nav-icon,
+.nav-link.active span {
+  color: #000000;
+  opacity: 1;
+  font-weight: 600;
 }
 
 /* Badge styles */
@@ -105,7 +177,20 @@
   font-size: 0.75rem;
   border-radius: 20px;
   background-color: #000000;
-  color: #ffffff;
+  color: #ffffff !important;
+}
+
+/* Ensure badge color doesn't change on hover */
+.nav-link:hover .menu-badge {
+  color: #ffffff !important;
+  opacity: 1;
+  font-weight: normal;
+}
+
+.nav-link.active .menu-badge {
+  color: #ffffff !important;
+  opacity: 1;
+  font-weight: normal;
 }
 
 /* Badge styling */
