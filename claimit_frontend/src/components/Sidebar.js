@@ -114,14 +114,17 @@ const Sidebar = () => {
       return (
         <div key={item.label} className="nav-item">
           <button
-            className="nav-link"
+            className="nav-link has-submenu"
             onClick={() => toggleSubmenu(item.label)}
           >
             <div className="menu-item-content">
               <item.icon className="nav-icon" />
               <span>{item.label}</span>
             </div>
-            <FaChevronRight className={`dropdown-arrow ${isExpanded ? 'open' : ''}`} />
+            <FaChevronRight 
+              className={`dropdown-arrow ${isExpanded ? 'open' : ''}`}
+              aria-label={isExpanded ? 'Collapse menu' : 'Expand menu'}
+            />
           </button>
           {isExpanded && (
             <div className="submenu">
@@ -189,7 +192,7 @@ const Sidebar = () => {
           <div className="menu-group mt-auto">
             <button
               onClick={handleLogout}
-              className="nav-link text-danger border-0 bg-transparent w-100 text-start d-flex align-items-center"
+              className="nav-link text-danger border border-dark text-start d-flex align-items-center"
             >
               <FaSignOutAlt className="nav-icon" />
               Logout

@@ -220,13 +220,26 @@
 /* Logout button */
 .nav-link.text-danger {
   color: #000000 !important;
-  border-width: 1px;
+  border-width: 1px !important;
+  transition: all 0.3s ease;
+  margin: 0 1rem;
+  width: calc(100% - 2rem) !important;
+  border-radius: 8px !important;
+  background-color: transparent !important;
+  border-color: #000000 !important;
+  font-weight: 500 !important;
+  padding: 0.5rem 1rem !important;
+  cursor: pointer !important;
+  margin: 0 1rem !important;
 }
 
 .nav-link.text-danger:hover {
   color: #dc3545 !important;
   background-color: rgba(220, 53, 69, 0.05);
-  border-color: #dc3545;
+  border-color: #dc3545 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin: 0 1rem !important;
 }
 
 /* Main Content */
