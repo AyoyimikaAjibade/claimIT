@@ -1,42 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
 import { FaUpload, FaFile, FaTimes, FaCheck } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
 import '../styles/claims.css';
 
 const ClaimForm = () => {
+  const { authToken } = useContext(AuthContext);
   const [currentStep, setCurrentStep] = useState(1);
   const [disasterType, setDisasterType] = useState('');
   const [propertyType, setPropertyType] = useState('');
+  const [disasterChoices, setDisasterChoices] = useState([]);
+  const [propertyChoices, setPropertyChoices] = useState([]);
   const [description, setDescription] = useState('');
   const [estimatedLoss, setEstimatedLoss] = useState('');
+  const [errors, setErrors] = useState({});
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState(null);
 
-  const PROPERTY_TYPE_CHOICES = [
-    { value: 'residential', label: 'Residential' },
-    { value: 'commercial', label: 'Commercial' },
-    { value: 'industrial', label: 'Industrial' }
+  const maxFileSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = [
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'application/zip'
   ];
 
-  const DISASTER_TYPE_CHOICES = [
-    { value: 'wildfire', label: 'Wildfire' },
-    { value: 'flood', label: 'Flood' },
-    { value: 'earthquake', label: 'Earthquake' },
-    { value: 'hurricane', label: 'Hurricane' },
-    { value: 'tornado', label: 'Tornado' }
-  ];
+  useEffect(() => {
+    if (!authToken) return;
+    const fetchChoices = async () => {
+      try {
+        const resp = await axios.options(
+          `${process.env.REACT_APP_API_BASE_URL}/api/claims/`,
+          { headers: { Authorization: `Bearer ${authToken}` } }
+        );
+        const post = resp.data.actions.POST;
+        // Normalize choices: array or object
+        const normalize = (raw) => Array.isArray(raw)
+          ? raw
+          : Object.entries(raw).map(([value, display_name]) => ({ value, display_name }));
+        setDisasterChoices(normalize(post.disaster_type.choices));
+        setPropertyChoices(normalize(post.property_type.choices));
+      } catch (e) {
+        console.error('Error loading choices', e);
+      }
+    };
+    fetchChoices();
+  }, [authToken]);
 
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
-    setFiles([...files, ...newFiles]);
+    const validFiles = [];
+    const fileErrors = [];
+    newFiles.forEach(file => {
+      if (!allowedTypes.includes(file.type)) fileErrors.push(`${file.name} not supported`);
+      else if (file.size > maxFileSize) fileErrors.push(`${file.name} exceeds 5MB`);
+      else validFiles.push(file);
+    });
+    setErrors(prev => ({ ...prev, documents: fileErrors }));
+    setFiles([...files, ...validFiles]);
   };
 
   const handleFileDrop = (e) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
-    setFiles([...files, ...droppedFiles]);
+    const validFiles = [];
+    const fileErrors = [];
+    droppedFiles.forEach(file => {
+      if (!allowedTypes.includes(file.type)) fileErrors.push(`${file.name} not supported`);
+      else if (file.size > maxFileSize) fileErrors.push(`${file.name} exceeds 5MB`);
+      else validFiles.push(file);
+    });
+    setErrors(prev => ({ ...prev, documents: fileErrors }));
+    setFiles([...files, ...validFiles]);
   };
 
   const removeFile = (index) => {
@@ -45,6 +83,11 @@ const ClaimForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
+    if (errors.documents?.length) {
+      setFeedback({ type: 'error', message: 'Please fix file errors before submitting.' });
+      return;
+    }
     setLoading(true);
     try {
       const formData = new FormData();
@@ -63,7 +106,7 @@ const ClaimForm = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${localStorage.getItem('jwt_token')}`
+            "Authorization": `Bearer ${authToken}`
           }
         }
       );
@@ -83,11 +126,11 @@ const ClaimForm = () => {
       setFiles([]);
       setCurrentStep(1);
     } catch (err) {
-      console.error("Error submitting claim", err);
-      setFeedback({
-        type: 'error',
-        message: err.response?.data?.message || "Failed to submit claim."
-      });
+      if (err.response?.status === 400) {
+        setErrors(err.response.data);
+      } else {
+        setFeedback({ type: 'error', message: err.response?.data?.message || "Failed to submit claim." });
+      }
     } finally {
       setLoading(false);
     }
@@ -132,15 +175,18 @@ const ClaimForm = () => {
                   <Form.Select
                     value={disasterType}
                     onChange={(e) => setDisasterType(e.target.value)}
-                    required
+                    isInvalid={errors.disaster_type}
                   >
                     <option value="">Select Disaster Type</option>
-                    {DISASTER_TYPE_CHOICES.map((choice) => (
+                    {disasterChoices.map(choice => (
                       <option key={choice.value} value={choice.value}>
-                        {choice.label}
+                        {choice.display_name || choice.label || choice.value}
                       </option>
                     ))}
                   </Form.Select>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.disaster_type?.join(' ')}
+                  </Form.Control.Feedback>
                 </Form.Group>
 
                 <Form.Group className="mb-4">
@@ -148,15 +194,18 @@ const ClaimForm = () => {
                   <Form.Select
                     value={propertyType}
                     onChange={(e) => setPropertyType(e.target.value)}
-                    required
+                    isInvalid={errors.property_type}
                   >
                     <option value="">Select Property Type</option>
-                    {PROPERTY_TYPE_CHOICES.map((choice) => (
+                    {propertyChoices.map(choice => (
                       <option key={choice.value} value={choice.value}>
-                        {choice.label}
+                        {choice.display_name || choice.label || choice.value}
                       </option>
                     ))}
                   </Form.Select>
+                  <Form.Control.Feedback type="invalid">
+                    {errors.property_type?.join(' ')}
+                  </Form.Control.Feedback>
                 </Form.Group>
 
                 <div className="d-flex justify-content-end">
@@ -182,8 +231,11 @@ const ClaimForm = () => {
                     placeholder="Provide a detailed description of the damage..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    required
+                    isInvalid={errors.description}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.description?.join(' ')}
+                  </Form.Control.Feedback>
                 </Form.Group>
 
                 <Form.Group className="mb-4">
@@ -193,8 +245,11 @@ const ClaimForm = () => {
                     placeholder="Enter estimated monetary loss"
                     value={estimatedLoss}
                     onChange={(e) => setEstimatedLoss(e.target.value)}
-                    required
+                    isInvalid={errors.estimated_loss}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    {errors.estimated_loss?.join(' ')}
+                  </Form.Control.Feedback>
                 </Form.Group>
 
                 <div className="d-flex justify-content-between">
@@ -239,6 +294,12 @@ const ClaimForm = () => {
                     Browse Files
                   </Button>
                 </div>
+
+                {errors.documents?.length > 0 && (
+                  <Alert variant="danger" className="mt-3">
+                    {errors.documents.map((msg, idx) => <div key={idx}>{msg}</div>)}
+                  </Alert>
+                )}
 
                 {files.length > 0 && (
                   <div className="file-list">

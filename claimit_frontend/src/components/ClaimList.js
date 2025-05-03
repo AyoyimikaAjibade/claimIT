@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { FaExclamationTriangle, FaCheckCircle, FaClock, FaBan } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
 import '../styles/claims.css';
 
 const ClaimList = () => {
+  const { authToken } = useContext(AuthContext);
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchClaims = async () => {
+  const fetchClaims = useCallback(async () => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/api/claims/`, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem('jwt_token')}`
-        }
-      });
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/api/claims/`,
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
       setClaims(response.data);
       setError(null);
     } catch (err) {
@@ -24,11 +25,11 @@ const ClaimList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authToken]);
 
   useEffect(() => {
-    fetchClaims();
-  }, []);
+    if (authToken) fetchClaims();
+  }, [authToken, fetchClaims]);
 
   const getStatusIcon = (status) => {
     switch (status.toLowerCase()) {
@@ -38,6 +39,10 @@ const ClaimList = () => {
         return <FaClock className="text-warning" />;
       case 'rejected':
         return <FaBan className="text-danger" />;
+      case 'under_review':
+        return <FaClock className="text-info" />;
+      case 'settled':
+        return <FaCheckCircle className="text-secondary" />;
       default:
         return <FaExclamationTriangle className="text-secondary" />;
     }
@@ -100,8 +105,8 @@ const ClaimList = () => {
               <h5 className="claim-title">
                 Claim #{claim.id} - {claim.disaster_type}
               </h5>
-              <span className={`claim-status ${claim.status.toLowerCase()}`}>
-                {getStatusIcon(claim.status)} {claim.status}
+              <span className={`status-badge ${claim.status.toLowerCase()}`}>
+                {getStatusIcon(claim.status)} {claim.status.replace('_', ' ')}
               </span>
             </div>
             <div className="claim-body">

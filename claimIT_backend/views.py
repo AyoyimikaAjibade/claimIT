@@ -199,6 +199,7 @@ class ClaimViewSet(viewsets.ModelViewSet):
         }
     )
     def create(self, request, *args, **kwargs):
+        print('request.data1', request.data)
         return super().create(request, *args, **kwargs)
              
 class ClaimListCreateView(APIView):

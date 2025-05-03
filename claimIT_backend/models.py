@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 
 class UserProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
@@ -51,14 +53,33 @@ class Claim(models.Model):
     
     # Additional fields for better tracking
     documents = models.FileField(upload_to='claim_documents/', null=True, blank=True)
-    insurance_policy_number = models.CharField(max_length=50, null=True, blank=True)
-    claim_number = models.CharField(max_length=50, unique=True)
+    insurance_policy_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    claim_number = models.CharField(max_length=50, unique=True, null=True, blank=True)
     
     def __str__(self):
         return f"{self.user.username} - {self.disaster_type} - {self.status}"
     
     class Meta:
         ordering = ['-created_at']
+
+def validate_document_size(file):
+    max_size = 5 * 1024 * 1024  # 5MB
+    if file.size > max_size:
+        raise ValidationError("Max file size is 5MB.")
+
+def user_claim_directory_path(instance, filename):
+    return f'user_{instance.claim.user.id}/claims/{instance.claim.id}/{filename}'
+
+class ClaimDocument(models.Model):
+    claim = models.ForeignKey('Claim', related_name='claim_documents', on_delete=models.CASCADE)
+    file = models.FileField(
+        upload_to=user_claim_directory_path,
+        validators=[
+            FileExtensionValidator(allowed_extensions=['pdf','png','jpg','jpeg','gif','zip']),
+            validate_document_size
+        ]
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class DisasterUpdate(models.Model):
     DISASTER_TYPES = [
