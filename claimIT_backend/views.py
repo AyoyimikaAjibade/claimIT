@@ -12,6 +12,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
 from .models import UserProfile, DisasterUpdate, Claim
+from .utils.fema_scraper import scrape_fema_disasters
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -199,7 +200,6 @@ class ClaimViewSet(viewsets.ModelViewSet):
         }
     )
     def create(self, request, *args, **kwargs):
-        print('request.data1', request.data)
         return super().create(request, *args, **kwargs)
              
 class ClaimListCreateView(APIView):
@@ -238,3 +238,11 @@ class DisasterUpdateViewSet(viewsets.ModelViewSet):
         # For Swagger documentation, return all disaster updates
         # This is safe since disaster updates are not user-specific
         return DisasterUpdate.objects.all()
+    
+    def list(self, request, *args, **kwargs):
+        # refresh DB before returning
+        try:
+            scrape_fema_disasters(start_year=2019, end_year=2025, incident_type='earthquake', states=['CA'])
+        except Exception:
+            pass  # swallow scraper errors
+        return super().list(request, *args, **kwargs)

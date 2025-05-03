@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Card, Container, Row, Col, Button, Badge } from 'react-bootstrap';
 import { FaFire, FaWater, FaBuilding, FaBusinessTime, FaQuestionCircle, FaWind } from 'react-icons/fa';
 import axios from 'axios';
 import moment from 'moment';
+import { AuthContext } from '../context/AuthContext';
 
 const DisasterUpdates = () => {
   const [updates, setUpdates] = useState([]);
@@ -11,11 +12,13 @@ const DisasterUpdates = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedSeverity, setSelectedSeverity] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const { authToken } = useContext(AuthContext);
 
   const fetchUpdates = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/disaster-updates/`
+        `${process.env.REACT_APP_API_BASE_URL}/api/disaster-updates/`,
+        { headers: { Authorization: `Bearer ${authToken}` } }
       );
       setUpdates(response.data);
       setLoading(false);
@@ -26,8 +29,10 @@ const DisasterUpdates = () => {
   };
 
   useEffect(() => {
-    fetchUpdates();
-  }, []);
+    if (authToken) {
+      fetchUpdates();
+    }
+  }, [authToken]);
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -129,7 +134,7 @@ const DisasterUpdates = () => {
                     <th>Location</th>
                     <th>Severity</th>
                     <th>Source</th>
-                    <th>Details</th>
+                    <th>Title</th>
                   </tr>
                 </thead>
                 <tbody>

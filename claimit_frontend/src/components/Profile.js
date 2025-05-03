@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Card, Container, Row, Col, Form, Button, Image } from 'react-bootstrap';
 import { FaUser, FaPhone, FaMapMarkerAlt, FaLock } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
@@ -7,11 +7,13 @@ import axios from 'axios';
 const Profile = () => {
   const { authToken } = useContext(AuthContext);
   const [profile, setProfile] = useState({
+    id: null,
     username: '',
     email: '',
     phone_number: '',
     address: '',
-    emergency_contact: ''
+    emergency_contact: '',
+    profile_picture: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -20,26 +22,36 @@ const Profile = () => {
   const fetchProfile = async () => {
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/profile/`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/user-profiles/`,
         {
           headers: {
             'Authorization': `Bearer ${authToken}`
           }
         }
       );
-      setProfile(response.data);
+      const profiles = response.data;
+      if (Array.isArray(profiles) && profiles.length > 0) {
+        setProfile(profiles[0]);
+      } else {
+        setError('Profile not found');
+      }
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching profile information:', err);
       setError('Failed to fetch profile information');
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/api/profile/`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/user-profiles/${profile.id}/`,
         profile,
         {
           headers: {
@@ -65,12 +77,13 @@ const Profile = () => {
 
   return (
     <Container className="py-4">
-      <h2 className="mb-4">Profile</h2>
+      <h2 className="mb-4 text-primary">Profile</h2>
       
       {loading ? (
         <div className="text-center">Loading...</div>
       ) : (
-        <Card className="shadow-lg">
+        <Card className="shadow-lg border-0">
+          <Card.Header className="bg-primary text-white text-center">Profile Settings</Card.Header>
           <Card.Body>
             <Row className="mb-4">
               <Col md={4} className="text-center">
