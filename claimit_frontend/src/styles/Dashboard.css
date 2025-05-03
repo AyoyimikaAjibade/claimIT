@@ -18,6 +18,7 @@
   transition: all 0.3s ease;
   overflow: hidden;
   height: 100%;
+  color: #ffffff;
 }
 
 .stat-card:hover {
@@ -26,7 +27,7 @@
 }
 
 .stat-card.primary-gradient {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
 }
 
 .stat-card.success-gradient {
@@ -47,19 +48,26 @@
   z-index: 1;
 }
 
-.stat-card-title {
+.stat-card .stat-card-title {
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.875rem;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 0.5rem;
 }
 
-.stat-card-value {
-  color: white;
-  font-size: 2rem;
+.stat-card .stat-card-value {
+  color: #ffffff;
+  font-size: 1.75rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
+}
+
+.stat-card .stat-card-description {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  margin-bottom: 0;
 }
 
 .stat-card-icon {
@@ -148,13 +156,28 @@
 }
 
 .status-badge.pending {
-  background-color: rgba(255, 193, 7, 0.1);
+  background-color: rgba(255, 193, 7, 0.15);
   color: #856404;
+}
+
+.status-badge.under_review {
+  background-color: rgba(13, 202, 240, 0.1);
+  color: #0c5460;
 }
 
 .status-badge.approved {
   background-color: rgba(40, 167, 69, 0.1);
   color: #155724;
+}
+
+.status-badge.rejected {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #721c24;
+}
+
+.status-badge.settled {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #343a40;
 }
 
 /* Loading States */

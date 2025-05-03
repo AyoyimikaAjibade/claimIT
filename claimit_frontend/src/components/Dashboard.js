@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
 import { Card, Container, Row, Col, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { FaChartLine, FaMoneyBillWave, FaFileAlt, FaUserShield, FaPlus, FaList } from 'react-icons/fa';
+import { AuthContext } from '../context/AuthContext';
 import '../styles/Dashboard.css';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { authToken } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalClaims: 0,
@@ -13,28 +16,80 @@ const Dashboard = () => {
     approvedClaims: 0,
     totalAmount: 0
   });
+  const [recentClaims, setRecentClaims] = useState([]);
 
-  // Simulated API call - replace with actual API integration
+  // Fetch real data from the backend
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setLoading(true);
+        // Get JWT token from AuthContext
+        const token = authToken;
+        if (!token) {
+          console.error('No authentication token found');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch claims from backend
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/api/claims/`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        // Process the data to calculate the stats
+        const claims = response.data;
+        
+        // Calculate total claims
+        const totalClaims = claims.length;
+        
+        // Count claims by status
+        const pendingClaims = claims.filter(
+          claim => claim.status === 'pending' || claim.status === 'under_review'
+        ).length;
+        
+        const approvedClaims = claims.filter(
+          claim => claim.status === 'approved' || claim.status === 'settled'
+        ).length;
+        
+        // Sum up the estimated losses for all claims
+        const totalAmount = claims.reduce(
+          (sum, claim) => sum + parseFloat(claim.estimated_loss), 
+          0
+        );
+        
+        // Get recent claims (sorted by created_at, which should come from the API already sorted)
+        const recentClaimsData = claims.slice(0, 5);
+
+        // Update state with real data
         setStats({
-          totalClaims: 24,
-          pendingClaims: 8,
-          approvedClaims: 12,
-          totalAmount: 150000
+          totalClaims,
+          pendingClaims,
+          approvedClaims,
+          totalAmount
         });
+        
+        setRecentClaims(recentClaimsData);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Fallback to sample data if API call fails
+        setStats({
+          totalClaims: 0,
+          pendingClaims: 0,
+          approvedClaims: 0,
+          totalAmount: 0
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [authToken]);
 
   const handleNewClaim = () => {
     navigate('/claim/new');
@@ -130,7 +185,7 @@ const Dashboard = () => {
       {/* Recent Updates */}
       <Card className="updates-card">
         <Card.Body>
-          <h3 className="mb-4">Recent Updates</h3>
+          <h3 className="mb-4">Recent Claims</h3>
           <div className="table-container">
             <table className="table updates-table">
               <thead>
@@ -142,18 +197,24 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Apr 12, 2025</td>
-                  <td>Wildfire</td>
-                  <td><span className="status-badge pending">Pending</span></td>
-                  <td>$50,000</td>
-                </tr>
-                <tr>
-                  <td>Apr 11, 2025</td>
-                  <td>Flood</td>
-                  <td><span className="status-badge approved">Approved</span></td>
-                  <td>$25,000</td>
-                </tr>
+                {recentClaims.length > 0 ? (
+                  recentClaims.map((claim) => (
+                    <tr key={claim.id}>
+                      <td>{new Date(claim.created_at).toLocaleDateString()}</td>
+                      <td>{claim.disaster_type.charAt(0).toUpperCase() + claim.disaster_type.slice(1)}</td>
+                      <td>
+                        <span className={`status-badge ${claim.status}`}>
+                          {claim.status.replace('_', ' ').charAt(0).toUpperCase() + claim.status.replace('_', ' ').slice(1)}
+                        </span>
+                      </td>
+                      <td>${parseFloat(claim.estimated_loss).toLocaleString()}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center">No claims found</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
