@@ -3,7 +3,7 @@ services:
     name: claimIT_backend
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py createsuperuser"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py createsuperuser --noinput"
     startCommand: "gunicorn claimIT.wsgi --log-file -"
     envVars:
       - key: DJANGO_SETTINGS_MODULE
@@ -32,3 +32,14 @@ services:
         value: "http://localhost:3000"
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://claimit.onrender.com"
+  - type: static
+    name: claimit_frontend
+    env: static
+    plan: free
+    # Frontend React app in monorepo
+    root: ../claimit_frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: build
+    envVars:
+      - key: REACT_APP_API_BASE_URL
+        value: "https://claimit-backend.onrender.com"
