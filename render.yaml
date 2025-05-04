@@ -43,7 +43,7 @@ services:
     env: static
     plan: free
     # Frontend React app in monorepo
-    root: ../claimit_frontend
+    root: claimit_frontend
     buildCommand: "npm install && npm run build"
     staticPublishPath: build
     envVars:
