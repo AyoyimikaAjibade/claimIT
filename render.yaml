@@ -3,7 +3,7 @@ services:
     name: claimIT_backend
     env: python
     plan: free
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py createsuperuser --noinput"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py createsuperuser --noinput --username $DJANGO_SUPERUSER_USERNAME --email $DJANGO_SUPERUSER_EMAIL --password $DJANGO_SUPERUSER_PASSWORD"
     startCommand: "gunicorn claimIT.wsgi --log-file -"
     envVars:
       - key: DJANGO_SETTINGS_MODULE
@@ -32,6 +32,12 @@ services:
         value: "http://localhost:3000"
       - key: CSRF_TRUSTED_ORIGINS
         value: "https://claimit-backend-ss4k.onrender.com"
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: "admin"
+      - key: DJANGO_SUPERUSER_EMAIL
+        value: "admin@example.com"
+      - key: DJANGO_SUPERUSER_PASSWORD
+        fromEnv: DJANGO_SUPERUSER_PASSWORD
   - type: static
     name: claimit_frontend
     env: static

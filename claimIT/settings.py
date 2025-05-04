@@ -92,13 +92,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'claimIT.wsgi.application'
 
 
-# Database
+# Database configuration
+# Check if we're running on Render (production)
+IS_RENDER = 'RENDER' in os.environ
+
 # Use DATABASE_URL in production, fallback to manual settings locally
-DATABASE_URL = config('DATABASE_URL', default=None)
-if DATABASE_URL:
+if IS_RENDER:
     DATABASES = {
         'default': dj_database_url.config(
-            default=DATABASE_URL,
+            default=config('DATABASE_URL'),
             conn_max_age=600
         )
     }
