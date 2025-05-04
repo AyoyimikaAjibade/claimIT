@@ -398,6 +398,208 @@
           }
         }
       ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"]
+            },
+            "description": "Get all notifications for the current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Notification (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user\": 1,\n    \"title\": \"New Claim Update\",\n    \"message\": \"Your claim has been processed\",\n    \"type\": \"success\",\n    \"read\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"]
+            },
+            "description": "Create a new notification (ADMIN ONLY) - Will return 403 Forbidden if not admin"
+          },
+          "response": [
+            {
+              "name": "403 Forbidden (Non-Admin)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"user\": 1,\n    \"title\": \"New Claim Update\",\n    \"message\": \"Your claim has been processed\",\n    \"type\": \"success\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/notifications/",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "notifications"]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n    \"detail\": \"You do not have permission to perform this action.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Notification Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "1"]
+            },
+            "description": "Get details of a specific notification"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/1/mark_as_read/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "1", "mark_as_read"]
+            },
+            "description": "Mark a notification as read - Returns 404 if notification not found or doesn't belong to user"
+          },
+          "response": [
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/notifications/999/mark_as_read/",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "notifications", "999", "mark_as_read"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n    \"detail\": \"Not found.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/mark_all_as_read/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "mark_all_as_read"]
+            },
+            "description": "Mark all notifications as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/unread_count/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "unread_count"]
+            },
+            "description": "Get count of unread notifications"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/1/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "1"]
+            },
+            "description": "Delete a notification"
+          },
+          "response": []
+        }
+      ]
     }
   ]
 }

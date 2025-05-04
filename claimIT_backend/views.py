@@ -2,19 +2,19 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
-from .models import Claim
-from .serializers import ClaimSerializer
+from .models import Claim, UserProfile, DisasterUpdate, ClaimDocument, Notification
+from .serializers import UserSerializer, UserProfileSerializer, DisasterUpdateSerializer, ClaimSerializer, ClaimDocumentSerializer, NotificationSerializer
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
-from .serializers import UserSerializer, UserProfileSerializer, DisasterUpdateSerializer, ClaimSerializer
 from rest_framework import viewsets, permissions, status
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.models import User
-from .models import UserProfile, DisasterUpdate, Claim
 from .utils.fema_scraper import scrape_fema_disasters
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied, NotFound, APIException, ValidationError
 
 class RegisterView(viewsets.ViewSet):
     """
@@ -149,16 +149,59 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Check if user is authenticated before filtering
         if self.request.user.is_authenticated:
-            return UserProfile.objects.filter(user=self.request.user)
-        # Return empty queryset for anonymous users (for Swagger)
+            try:
+                # If admin user, allow access to all profiles
+                if self.request.user.is_staff or self.request.user.is_superuser:
+                    return UserProfile.objects.all()
+                # Regular users can only see their own profile
+                return UserProfile.objects.filter(user=self.request.user)
+            except Exception as e:
+                # Log the error for debugging
+                print(f"Error in get_queryset: {str(e)}")
+                # Return empty queryset on error
+                return UserProfile.objects.none()
+        # Return empty queryset for anonymous users
         return UserProfile.objects.none()
 
     def get_object(self):
-        # Check if user is authenticated
-        if not self.request.user.is_authenticated:
-            raise NotAuthenticated("Authentication required")
-        return UserProfile.objects.get(user=self.request.user)
-
+        try:
+            # Check if user is authenticated    
+            if not self.request.user.is_authenticated:
+                raise NotAuthenticated("Authentication credentials were not provided")
+                
+            # Get the requested profile ID from the URL
+            lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+            
+            # If we're using a detail URL with a specific ID
+            if lookup_url_kwarg in self.kwargs:
+                # Admin can access any profile
+                if self.request.user.is_staff or self.request.user.is_superuser:
+                    return super().get_object()
+                
+                # Regular users can only access their own profile
+                obj = super().get_object()
+                if obj.user != self.request.user:
+                    self.permission_denied(
+                        self.request, 
+                        message="You don't have permission to access this profile"
+                    )
+                return obj
+            
+            # If no specific ID, return the user's own profile
+            profile = UserProfile.objects.get(user=self.request.user)
+            return profile
+            
+        except UserProfile.DoesNotExist:
+            # Handle case where profile doesn't exist
+            raise NotFound(f"User profile for {self.request.user.username} not found")
+        except PermissionDenied as pd:
+            # Re-raise permission errors
+            raise pd
+        except Exception as e:
+            # Log the error and return a generic error
+            print(f"Error in get_object: {str(e)}")
+            raise APIException(f"Error retrieving user profile: {str(e)}")
+    
     @swagger_auto_schema(
         operation_description="Update user profile",
         request_body=UserProfileSerializer,
@@ -246,3 +289,151 @@ class DisasterUpdateViewSet(viewsets.ModelViewSet):
         except Exception:
             pass  # swallow scraper errors
         return super().list(request, *args, **kwargs)
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    """
+    API endpoints for managing user notifications.
+    """
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_permissions(self):
+        """
+        Override permissions:
+        - Only admins can create notifications
+        - Users can view, mark as read, and delete their own notifications
+        """
+        if self.action == 'create':
+            return [permissions.IsAdminUser()]
+        return super().get_permissions()
+    
+    def get_queryset(self):
+        """
+        Return only notifications for the current user.
+        Admin users can see all notifications.
+        """
+        if not self.request.user.is_authenticated:
+            return Notification.objects.none()
+            
+        # Admin users can see all notifications
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return Notification.objects.all().order_by('-created_at')
+            
+        # Regular users can only see their own notifications
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+    
+    def perform_create(self, serializer):
+        """
+        When admin creates a notification, ensure it's properly saved
+        """
+        try:
+            # Validate that the user exists
+            user_id = self.request.data.get('user')
+            if not user_id:
+                raise ValidationError({"user": "User ID is required"})
+                
+            try:
+                user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                raise ValidationError({"user": f"User with ID {user_id} does not exist"})
+                
+            serializer.save()
+            
+        except ValidationError as ve:
+            # Re-raise validation errors
+            raise ve
+        except Exception as e:
+            # Log the error for debugging
+            print(f"Error creating notification: {str(e)}")
+            raise APIException(f"Failed to create notification: {str(e)}")
+    
+    @swagger_auto_schema(
+        operation_description="List all notifications for the current user",
+        responses={
+            200: NotificationSerializer(many=True),
+            401: "Authentication credentials were not provided"
+        }
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    @swagger_auto_schema(
+        operation_description="Create a new notification (Admin only)",
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['user', 'title', 'message', 'type'],
+            properties={
+                'user': openapi.Schema(type=openapi.TYPE_INTEGER, description='User ID to send notification to'),
+                'title': openapi.Schema(type=openapi.TYPE_STRING, description='Notification title'),
+                'message': openapi.Schema(type=openapi.TYPE_STRING, description='Notification message'),
+                'type': openapi.Schema(type=openapi.TYPE_STRING, description='Notification type (success, warning, info, danger)'),
+                'read': openapi.Schema(type=openapi.TYPE_BOOLEAN, description='Whether notification is read (default: false)')
+            }
+        ),
+        responses={
+            201: NotificationSerializer(),
+            400: "Bad request - Invalid data",
+            401: "Authentication credentials were not provided",
+            403: "Permission denied - Admin access required"
+        }
+    )
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to create notification: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @swagger_auto_schema(
+        operation_description="Mark a notification as read",
+        responses={
+            200: NotificationSerializer(),
+            404: "Notification not found",
+            403: "Permission denied"
+        }
+    )
+    @action(detail=True, methods=['patch'])
+    def mark_as_read(self, request, pk=None):
+        """Mark a notification as read"""
+        notification = self.get_object()
+        notification.read = True
+        notification.save()
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data)
+    
+    @swagger_auto_schema(
+        operation_description="Mark all notifications as read",
+        responses={
+            200: "All notifications marked as read",
+            403: "Permission denied"
+        }
+    )
+    @action(detail=False, methods=['post'])
+    def mark_all_as_read(self, request):
+        """Mark all notifications as read"""
+        notifications = self.get_queryset()
+        notifications.update(read=True)
+        return Response({'status': 'All notifications marked as read'}, status=status.HTTP_200_OK)
+    
+    @swagger_auto_schema(
+        operation_description="Get count of unread notifications",
+        responses={
+            200: openapi.Response(
+                description="Unread notification count",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER)
+                    }
+                )
+            ),
+            403: "Permission denied"
+        }
+    )
+    @action(detail=False, methods=['get'])
+    def unread_count(self, request):
+        """Get count of unread notifications"""
+        count = self.get_queryset().filter(read=False).count()
+        return Response({'count': count})

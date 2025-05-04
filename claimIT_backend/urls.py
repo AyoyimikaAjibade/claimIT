@@ -7,6 +7,7 @@ from .views import (
     UserProfileViewSet,
     DisasterUpdateViewSet,
     ClaimViewSet,
+    NotificationViewSet,
     CustomTokenObtainPairView
 )
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -18,6 +19,7 @@ router = DefaultRouter()
 router.register(r'user-profiles', UserProfileViewSet, basename='user-profiles')
 router.register(r'claims', ClaimViewSet)
 router.register(r'disaster-updates', DisasterUpdateViewSet)
+router.register(r'notifications', NotificationViewSet, basename='notifications')
 
 # Define the URL patterns
 urlpatterns = [

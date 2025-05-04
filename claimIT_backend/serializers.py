@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import UserProfile, DisasterUpdate, Claim, ClaimDocument
+from .models import UserProfile, DisasterUpdate, Claim, ClaimDocument, Notification
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -80,3 +80,18 @@ class ClaimSerializer(serializers.ModelSerializer):
         claim.insurance_policy_number = f"POL{year}{suffix}"
         claim.save()
         return claim
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Notification model.
+    """
+    created_at_formatted = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'title', 'message', 'type', 'read', 'created_at', 'created_at_formatted']
+        read_only_fields = ['created_at']
+    
+    def get_created_at_formatted(self, obj):
+        """Return formatted date for frontend display"""
+        return obj.created_at.strftime('%Y-%m-%d')

@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { 
@@ -9,21 +9,54 @@ import {
   FaBell,
   FaCog,
   FaSignOutAlt,
-  FaChevronDown,
   FaChevronRight,
   FaExclamationTriangle,
   FaBook,
   FaQuestionCircle,
-  FaBars
+  FaBars,
 } from 'react-icons/fa';
+import axios from 'axios';
 import '../styles/Sidebar.css';
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext);
+  const { logout, authToken } = useContext(AuthContext);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch unread notification count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!authToken) return;
+      
+      try {
+        setLoading(true);
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_BASE_URL}/api/notifications/unread_count/`,
+          {
+            headers: {
+              'Authorization': `Bearer ${authToken}`
+            }
+          }
+        );
+        setUnreadCount(response.data.count);
+      } catch (error) {
+        console.error('Error fetching unread count:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUnreadCount();
+    
+    // Set up polling to refresh count every minute
+    const intervalId = setInterval(fetchUnreadCount, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, [authToken]);
 
   const menuGroups = [
     {
@@ -56,7 +89,7 @@ const Sidebar = () => {
           path: '/notifications',
           icon: FaBell,
           label: 'Notifications',
-          badge: '3' // Optional: Add badge for unread notifications
+          badge: unreadCount > 0 ? unreadCount.toString() : null
         }
       ]
     },
