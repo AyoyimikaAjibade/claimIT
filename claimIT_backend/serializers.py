@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import UserProfile, DisasterUpdate, Claim, ClaimDocument, Notification
+import re
 
 class UserSerializer(serializers.ModelSerializer):
     """
@@ -28,10 +29,55 @@ class UserProfileSerializer(serializers.ModelSerializer):
     Serializer for UserProfile model.
     """
     user = UserSerializer(read_only=True)
+    full_address = serializers.ReadOnlyField()
 
     class Meta:
         model = UserProfile
-        fields = ['user', 'phone_number', 'address', 'emergency_contact', 'profile_picture']
+        fields = [
+            'user', 
+            'phone_number', 
+            'street_address',
+            'city',
+            'state',
+            'country',
+            'postal_code',
+            'full_address',
+            'emergency_contact', 
+            'profile_picture'
+        ]
+
+    def validate_state(self, value):
+        """Validate state code format for US addresses"""
+        if self.initial_data.get('country') == 'United States':
+            if not re.match(r'^[A-Z]{2}$', value):
+                raise serializers.ValidationError(
+                    "For US addresses, state must be a valid 2-letter state code (e.g., CA for California)"
+                )
+        return value.upper() if value else value
+
+    def validate_postal_code(self, value):
+        """Validate postal code format"""
+        if value and not re.match(r'^\d{5}(-\d{4})?$', value) and self.initial_data.get('country') == 'United States':
+            raise serializers.ValidationError("US postal codes must be in the format 12345 or 12345-6789")
+        return value
+
+    def validate_phone_number(self, value):
+        """Validate phone number format"""
+        if value and not re.match(r'^\+?1?\d{9,15}$', value):
+            raise serializers.ValidationError("Phone number must be entered in the format: '+1234567890'. Up to 15 digits allowed.")
+        return value
+
+    def validate(self, data):
+        """Validate that all required address fields are provided"""
+        required_fields = ['street_address', 'city', 'state', 'country', 'postal_code']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            raise serializers.ValidationError({
+                field: "This field is required" for field in missing_fields
+            })
+        
+        return data
 
 class DisasterUpdateSerializer(serializers.ModelSerializer):
     """

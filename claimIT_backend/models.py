@@ -6,7 +6,13 @@ from django.core.validators import FileExtensionValidator
 class UserProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     phone_number = models.CharField(max_length=20, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
+    # Detailed address fields
+    street_address = models.CharField(max_length=255, null=False, blank=False, help_text="Street address, apartment, unit, etc.")
+    city = models.CharField(max_length=100, null=False, blank=False)
+    state = models.CharField(max_length=2, null=False, blank=False, help_text="State code (e.g., CA for California)")
+    country = models.CharField(max_length=100, null=False, blank=False, default="United States")
+    postal_code = models.CharField(max_length=20, null=False, blank=False, help_text="ZIP or postal code")
+    
     emergency_contact = models.CharField(max_length=100, null=True, blank=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -14,6 +20,22 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s profile"
+
+    @property
+    def full_address(self):
+        """Return the complete address as a formatted string"""
+        parts = []
+        if self.street_address:
+            parts.append(self.street_address)
+        if self.city:
+            parts.append(self.city)
+        if self.state:
+            parts.append(self.state)
+        if self.postal_code:
+            parts.append(self.postal_code)
+        if self.country:
+            parts.append(self.country)
+        return ", ".join(parts) if parts else None
 
 class Claim(models.Model):
     STATUS_CHOICES = [
