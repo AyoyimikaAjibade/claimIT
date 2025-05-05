@@ -83,9 +83,28 @@ class DisasterUpdateSerializer(serializers.ModelSerializer):
     """
     Serializer for DisasterUpdate model.
     """
+    updated_at_formatted = serializers.SerializerMethodField()
+    
     class Meta:
         model = DisasterUpdate
-        fields = '__all__'
+        fields = [
+            'id', 
+            'title', 
+            'location', 
+            'disaster_type', 
+            'severity', 
+            'declaration_type',
+            'declaration_display',
+            'assistance_available',
+            'source', 
+            'url', 
+            'updated_at',
+            'updated_at_formatted'
+        ]
+    
+    def get_updated_at_formatted(self, obj):
+        """Return formatted date for frontend display"""
+        return obj.updated_at.strftime('%Y-%m-%d') if obj.updated_at else ''
 
 class ClaimDocumentSerializer(serializers.ModelSerializer):
     """Serializer for uploaded claim documents"""

@@ -1,55 +1,57 @@
 import requests
 import urllib.parse
 from datetime import datetime
-from claimIT_backend.models import DisasterUpdate
+from ..models import DisasterUpdate
 
-# Map FEMA's incident labels to our disaster_type keys
+# Map FEMA disaster types to our internal types
 DISASTER_MAP = {
-    'Wildfire': 'wildfire',
     'Flood': 'flood',
-    'Earthquake': 'earthquake',
     'Hurricane': 'hurricane',
     'Tornado': 'tornado',
+    'Fire': 'wildfire',
+    'Earthquake': 'earthquake',
+    'Other': 'other',
 }
 
 # Map FEMA declaration types to severity levels
 DECLARATION_SEVERITY = {
-    'Major Disaster Declaration': 3,
-    'Emergency Declaration': 2,
-    'Fire Management Assistance Declaration': 2,
-    'Fire Suppression Authorization': 1,
+    'DR': 3,  # Major Disaster Declaration
+    'EM': 3,  # Emergency Declaration
+    'FM': 2,  # Fire Management Assistance Declaration
+    'FS': 1,  # Fire Suppression Authorization
 }
 
-# Map human-friendly incident types to FEMA selection codes
+# Map FEMA declaration types to display names
+DECLARATION_DISPLAY = {
+    'DR': 'Major Disaster Declaration',
+    'EM': 'Emergency Declaration',
+    'FM': 'Fire Management Assistance Declaration',
+    'FS': 'Fire Suppression Authorization',
+}
+
+# FEMA incident type codes
 INCIDENT_TYPE_CODES = {
-    'biological': 49750,
-    'earthquake': 49136,
-    'fire': 49121,
-    'flood': 49112,
-    'straight-line winds': 51096,
-    'tropical storm': 51093,
+    'earthquake': 51018,
+    'flood': 51019,
+    'hurricane': 51020,
+    'tornado': 51022,
+    'wildfire': 51023,
     'winter storm': 51091,
 }
 
-def scrape_fema_disasters(start_year=None, end_year=None, incident_type=None, states=None, limit=10, order_by='declarationDate desc'):
+def scrape_fema_disasters(user_state=None, postal_code=None):
     """
     Fetch disaster declarations from FEMA Open API and upsert to DisasterUpdate.
     """
     api_url = 'https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries'
     filters = []
-    # if start_year:
-    #     filters.append(f"declarationDate ge '{start_year}-01-01T00:00:00Z'")
-    # if end_year:
-    #     filters.append(f"declarationDate le '{end_year}-12-31T23:59:59Z'")
-    # if incident_type:
-    #     code = INCIDENT_TYPE_CODES.get(str(incident_type).lower(), incident_type)
-    #     filters.append(f"incidentType eq '{code}'")
-    if states:
-        sts = states if isinstance(states, list) else [states]
+    order_by='declarationDate desc'
+    if user_state or postal_code:
+        sts = user_state if isinstance(user_state, list) else [user_state]
         sf = " or ".join([f"state eq '{s}'" for s in sts])
         filters.append(f"({sf})")
     # build OData query manually to preserve `$` in parameter names
-    query = [f'$top={limit}']
+    query = [f'$top={10}']  # Limit to 10 most recent records
     if filters:
         filter_str = ' and '.join(filters)
         filter_enc = urllib.parse.quote_plus(filter_str)
@@ -58,29 +60,59 @@ def scrape_fema_disasters(start_year=None, end_year=None, incident_type=None, st
         order_enc = urllib.parse.quote_plus(order_by)
         query.append(f'$orderby={order_enc}')
     url = f"{api_url}?{'&'.join(query)}"
-    print('FEMA API URL:', url)
     try:
         resp = requests.get(url, timeout=30)
         resp.raise_for_status()
         records = resp.json().get('DisasterDeclarationsSummaries', [])
         print(f"Fetched {len(records)} DisasterDeclarationsSummaries records")
+        
+        DisasterUpdate.objects.all().delete()
+        
+        # Process and save new disaster updates
         for rec in records:
-            title = rec.get('declarationTitle') or rec.get('incidentType')
-            location = rec.get('state')
+            # Extract and map the fields from FEMA data
+            title = rec.get('declarationTitle', '')
+            location = rec.get('designatedArea', '')
             d_type = DISASTER_MAP.get(rec.get('incidentType'), 'other')
-            severity = DECLARATION_SEVERITY.get(rec.get('declarationType'), 2)
-            url_link = rec.get('url', '')
-            description = rec.get('type', '') or ''
+            declaration_type = rec.get('declarationType', '')
+            severity = DECLARATION_SEVERITY.get(declaration_type, 4)
+            declaration_display_name = DECLARATION_DISPLAY.get(declaration_type, 'Unknown')
+            
+            # Check if any assistance programs are declared
+            assistance_available = any([
+                rec.get('ihProgramDeclared') == 1,
+                rec.get('iaProgramDeclared') == 1,
+                rec.get('paProgramDeclared') == 1,
+                rec.get('hmProgramDeclared') == 1
+            ])
+            
+            # Get the last refresh date
+            last_refresh = rec.get('lastRefresh')
+            if last_refresh:
+                try:
+                    updated_at = datetime.strptime(last_refresh, '%Y-%m-%dT%H:%M:%S.%fZ')
+                except ValueError:
+                    updated_at = datetime.now()
+            else:
+                updated_at = datetime.now()
+                
+            # Construct URL for more information
+            disaster_number = rec.get('disasterNumber', '')
+            url_link = f"https://www.fema.gov/disaster/{disaster_number}" if disaster_number else ''
+            
             DisasterUpdate.objects.update_or_create(
                 title=title,
                 location=location,
                 defaults={
                     'disaster_type': d_type,
-                    'description': description,
                     'severity': severity,
-                    'source': 'FEMA API',
-                    'url': url_link
+                    'declaration_type': declaration_type,
+                    'declaration_display': declaration_display_name,
+                    'assistance_available': assistance_available,
+                    'source': 'FEMA',
+                    'url': url_link,
+                    'updated_at': updated_at
                 }
             )
     except Exception as e:
-        print('FEMA API fetch error:', e)
+        print(f"Error fetching FEMA data: {e}")

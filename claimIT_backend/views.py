@@ -269,23 +269,19 @@ class ClaimDetailView(RetrieveUpdateDestroyAPIView):
         # Ensure users access only their own claims
         return self.queryset.filter(user=self.request.user)
 
-class DisasterUpdateViewSet(viewsets.ModelViewSet):
+class DisasterUpdateViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    API endpoints for managing disaster updates.
+    API endpoint for viewing disaster updates.
     """
-    queryset = DisasterUpdate.objects.all()
+    queryset = DisasterUpdate.objects.all().order_by('-updated_at')[:10]
     serializer_class = DisasterUpdateSerializer
     permission_classes = [permissions.IsAuthenticated]
     
-    def get_queryset(self):
-        # For Swagger documentation, return all disaster updates
-        # This is safe since disaster updates are not user-specific
-        return DisasterUpdate.objects.all()
-    
     def list(self, request, *args, **kwargs):
         # refresh DB before returning
+        user_profile = UserProfile.objects.get(user=self.request.user)
         try:
-            scrape_fema_disasters(start_year=2019, end_year=2025, incident_type='earthquake', states=['CA'])
+            scrape_fema_disasters(user_state=user_profile.state, postal_code=user_profile.postal_code)
         except Exception:
             pass  # swallow scraper errors
         return super().list(request, *args, **kwargs)

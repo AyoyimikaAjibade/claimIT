@@ -104,26 +104,34 @@ class ClaimDocument(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class DisasterUpdate(models.Model):
+    """
+    Model for disaster updates from FEMA and other sources.
+    """
     DISASTER_TYPES = [
-        ('wildfire', 'Wildfire'),
-        ('flood', 'Flood'),
         ('earthquake', 'Earthquake'),
+        ('flood', 'Flood'),
         ('hurricane', 'Hurricane'),
         ('tornado', 'Tornado'),
+        ('wildfire', 'Wildfire'),
         ('other', 'Other')
     ]
     
-    disaster_type = models.CharField(max_length=50, choices=DISASTER_TYPES)
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    location = models.CharField(max_length=200)
-    severity = models.IntegerField(choices=[(1, 'Low'), (2, 'Medium'), (3, 'High')])
+    title = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, help_text="Designated area affected by the disaster")
+    disaster_type = models.CharField(max_length=20, choices=DISASTER_TYPES, default='other')
+    severity = models.IntegerField(choices=[(1, 'Low'), (2, 'Medium'), (3, 'High'), (4, 'Unknown')])
+    declaration_type = models.CharField(max_length=10, blank=True, help_text="FEMA declaration type code (e.g., DR, FM, EM)")
+    declaration_display = models.CharField(max_length=100, blank=True, help_text="FEMA declaration display info")
+    assistance_available = models.BooleanField(default=False, help_text="Whether any assistance programs are declared")
     source = models.CharField(max_length=100, help_text="Source of the update (e.g., FEMA, local government)")
     url = models.URLField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(help_text="Last refresh date from FEMA")
     
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-updated_at']
+    
+    def __str__(self):
+        return f"{self.title} ({self.location}) - {self.get_disaster_type_display()}"
 
 class Notification(models.Model):
     """
