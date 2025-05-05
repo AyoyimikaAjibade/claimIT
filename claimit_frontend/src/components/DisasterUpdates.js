@@ -4,6 +4,7 @@ import { FaFire, FaWater, FaBuilding, FaExclamationTriangle, FaQuestionCircle, F
 import axios from 'axios';
 import moment from 'moment';
 import { AuthContext } from '../context/AuthContext';
+import { fetchUserProfile } from './Profile';
 
 const DisasterUpdates = () => {
   const [updates, setUpdates] = useState([]);
@@ -26,13 +27,12 @@ const DisasterUpdates = () => {
     }
   }, [authToken]);
 
-  const fetchUserProfile = useCallback(async () => {
+  const loadUserProfile = useCallback(async () => {
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/api/profile/`,
-        { headers: { Authorization: `Bearer ${authToken}` } }
-      );
-      setUserProfile(response.data);
+      const profileData = await fetchUserProfile(authToken);
+      if (profileData) {
+        setUserProfile(profileData);
+      }
     } catch (err) {
       console.error('Failed to fetch user profile', err);
     }
@@ -41,9 +41,9 @@ const DisasterUpdates = () => {
   useEffect(() => {
     if (authToken) {
       fetchUpdates();
-      fetchUserProfile();
+      loadUserProfile();
     }
-  }, [authToken, fetchUpdates, fetchUserProfile]);
+  }, [authToken, fetchUpdates, loadUserProfile]);
 
   const getSeverityColor = (severity) => {
     switch (severity) {

@@ -6,6 +6,35 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { US_STATES } from '../utils/stateData';
 
+// Export this function so it can be used in other components
+export const fetchUserProfile = async (authToken) => {
+  try {
+    const response = await axios.get(
+      `${process.env.REACT_APP_API_BASE_URL}/api/user-profiles/`,
+      {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      }
+    );
+    
+    // Handle both array and single object responses
+    const profileData = Array.isArray(response.data) 
+      ? response.data[0] 
+      : response.data;
+      
+    // Ensure user object exists to prevent "Cannot read properties of undefined" error
+    if (!profileData.user) {
+      profileData.user = { username: '', email: '' };
+    }
+    
+    return profileData;
+  } catch (err) {
+    console.error('Failed to fetch user profile', err);
+    return null;
+  }
+};
+
 const Profile = () => {
   const { authToken } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -27,39 +56,23 @@ const Profile = () => {
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
-          `${process.env.REACT_APP_API_BASE_URL}/api/user-profiles/`,
-          {
-            headers: {
-              'Authorization': `Bearer ${authToken}`
-            }
-          }
-        );
-        // Handle both array and single object responses
-        const profileData = Array.isArray(response.data) 
-          ? response.data[0] 
-          : response.data;
-          
-        // Ensure user object exists to prevent "Cannot read properties of undefined" error
-        if (!profileData.user) {
-          profileData.user = { username: '', email: '' };
+        const profileData = await fetchUserProfile(authToken);
+        if (profileData) {
+          setProfile(profileData);
+          setError('');
         }
-        
-        setProfile(profileData);
-        setError('');
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError('Failed to load profile data');
+      } catch (error) {
+        setError('Failed to load profile');
       } finally {
         setLoading(false);
       }
     };
 
     if (authToken) {
-      fetchProfile();
+      loadProfile();
     } else {
       navigate('/login');
     }
