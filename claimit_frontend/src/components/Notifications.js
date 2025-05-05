@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Card, Badge, Button, ListGroup, Toast } from 'react-bootstrap';
 import { FaBell, FaCheck, FaTrash, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
@@ -13,7 +13,7 @@ const Notifications = () => {
   const { authToken, user } = useContext(AuthContext);
   const isAdmin = user && user.is_staff;
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(
@@ -32,7 +32,7 @@ const Notifications = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authToken]);
 
   useEffect(() => {
     if (authToken) {
@@ -44,7 +44,7 @@ const Notifications = () => {
       // Clean up interval on component unmount
       return () => clearInterval(intervalId);
     }
-  }, [authToken]);
+  }, [authToken, fetchNotifications]);
 
   const markAsRead = async (id) => {
     try {

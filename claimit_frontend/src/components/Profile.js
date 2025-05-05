@@ -38,7 +38,6 @@ const Profile = () => {
             }
           }
         );
-        console.log('Profile data from API:', response.data);
         // Handle both array and single object responses
         const profileData = Array.isArray(response.data) 
           ? response.data[0] 

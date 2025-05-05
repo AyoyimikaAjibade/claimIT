@@ -25,7 +25,6 @@ const Sidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState({});
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
 
   // Fetch unread notification count
   useEffect(() => {
@@ -33,7 +32,6 @@ const Sidebar = () => {
       if (!authToken) return;
       
       try {
-        setLoading(true);
         const response = await axios.get(
           `${process.env.REACT_APP_API_BASE_URL}/api/notifications/unread_count/`,
           {
@@ -45,8 +43,6 @@ const Sidebar = () => {
         setUnreadCount(response.data.count);
       } catch (error) {
         console.error('Error fetching unread count:', error);
-      } finally {
-        setLoading(false);
       }
     };
 

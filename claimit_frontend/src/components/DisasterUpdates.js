@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Card, Container, Row, Col, Button, Badge } from 'react-bootstrap';
-import { FaFire, FaWater, FaBuilding, FaBusinessTime, FaQuestionCircle, FaWind } from 'react-icons/fa';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { Card, Container, Button, Badge, Table, Alert, Spinner } from 'react-bootstrap';
+import { FaFire, FaWater, FaBuilding, FaExclamationTriangle, FaQuestionCircle, FaWind, FaInfoCircle, FaCheckCircle } from 'react-icons/fa';
 import axios from 'axios';
 import moment from 'moment';
 import { AuthContext } from '../context/AuthContext';
@@ -9,12 +9,10 @@ const DisasterUpdates = () => {
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedSeverity, setSelectedSeverity] = useState('');
-  const [selectedType, setSelectedType] = useState('');
+  const [userProfile, setUserProfile] = useState(null);
   const { authToken } = useContext(AuthContext);
 
-  const fetchUpdates = async () => {
+  const fetchUpdates = useCallback(async () => {
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/disaster-updates/`,
@@ -26,13 +24,26 @@ const DisasterUpdates = () => {
       setError('Failed to fetch disaster updates');
       setLoading(false);
     }
-  };
+  }, [authToken]);
+
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/api/profile/`,
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      setUserProfile(response.data);
+    } catch (err) {
+      console.error('Failed to fetch user profile', err);
+    }
+  }, [authToken]);
 
   useEffect(() => {
     if (authToken) {
       fetchUpdates();
+      fetchUserProfile();
     }
-  }, [authToken]);
+  }, [authToken, fetchUpdates, fetchUserProfile]);
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -42,8 +53,25 @@ const DisasterUpdates = () => {
         return 'warning';
       case 3:
         return 'danger';
+      case 4:
+        return 'secondary';
       default:
         return 'secondary';
+    }
+  };
+
+  const getSeverityLabel = (severity) => {
+    switch (severity) {
+      case 1:
+        return 'Low';
+      case 2:
+        return 'Medium';
+      case 3:
+        return 'High';
+      case 4:
+        return 'Unknown';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -56,7 +84,7 @@ const DisasterUpdates = () => {
       case 'earthquake':
         return <FaBuilding className="me-2" />;
       case 'hurricane':
-        return <FaBusinessTime className="me-2" />;
+        return <FaExclamationTriangle className="me-2" />;
       case 'tornado':
         return <FaWind className="me-2" />;
       default:
@@ -64,108 +92,86 @@ const DisasterUpdates = () => {
     }
   };
 
-  const filteredUpdates = updates.filter(update => {
-    const matchesSeverity = !selectedSeverity || update.severity === parseInt(selectedSeverity);
-    const matchesType = !selectedType || update.disaster_type === selectedType;
-    return matchesSeverity && matchesType;
-  });
+  const getAssistanceIcon = (available) => {
+    return available ? 
+      <FaCheckCircle className="text-success" title="Assistance Available" /> : 
+      <FaInfoCircle className="text-secondary" title="No Assistance Available" />;
+  };
 
   return (
     <Container className="py-4">
       <h2 className="mb-4">Disaster Updates</h2>
 
-      <Card className="mb-4">
+      <Card className="mb-4 shadow-sm">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h3>Latest Updates</h3>
-            <Button
-              variant="outline-primary"
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              {showFilters ? 'Hide Filters' : 'Show Filters'}
-            </Button>
+            <h3>Latest Updates {userProfile && userProfile.state ? `from ${userProfile.state}` : ''}</h3>
           </div>
 
-          {showFilters && (
-            <div className="mb-4">
-              <Row>
-                <Col md={6}>
-                  <select
-                    className="form-select"
-                    value={selectedType}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                  >
-                    <option value="">All Disaster Types</option>
-                    <option value="wildfire">Wildfire</option>
-                    <option value="flood">Flood</option>
-                    <option value="earthquake">Earthquake</option>
-                    <option value="hurricane">Hurricane</option>
-                    <option value="tornado">Tornado</option>
-                    <option value="other">Other</option>
-                  </select>
-                </Col>
-                <Col md={6}>
-                  <select
-                    className="form-select"
-                    value={selectedSeverity}
-                    onChange={(e) => setSelectedSeverity(e.target.value)}
-                  >
-                    <option value="">All Severities</option>
-                    <option value="1">Low</option>
-                    <option value="2">Medium</option>
-                    <option value="3">High</option>
-                  </select>
-                </Col>
-              </Row>
-            </div>
-          )}
-
           {loading ? (
-            <div className="text-center">Loading updates...</div>
+            <div className="text-center p-5">
+              <Spinner animation="border" role="status" variant="primary">
+                <span className="visually-hidden">Loading updates...</span>
+              </Spinner>
+              <p className="mt-3">Loading disaster updates...</p>
+            </div>
           ) : error ? (
-            <div className="alert alert-danger">{error}</div>
+            <Alert variant="danger">{error}</Alert>
+          ) : updates.length === 0 ? (
+            <Alert variant="info">No disaster updates available for your area.</Alert>
           ) : (
             <div className="table-responsive">
-              <table className="table table-hover">
+              <Table hover responsive className="align-middle">
                 <thead>
                   <tr>
                     <th>Date</th>
                     <th>Type</th>
-                    <th>Location</th>
-                    <th>Severity</th>
-                    <th>Source</th>
                     <th>Title</th>
+                    <th>Severity</th>
+                    <th>Declaration</th>
+                    <th>Location</th>
+                    <th>Assistance</th>
+                    <th>Source</th>
+                    <th>Details</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUpdates.map((update) => (
+                  {updates.map((update) => (
                     <tr key={update.id}>
-                      <td>{moment(update.created_at).format('MMM D, YYYY')}</td>
+                      <td>{moment(update.updated_at_formatted || update.updated_at).format('MMM D, YYYY')}</td>
                       <td>
                         {getDisasterIcon(update.disaster_type)}
-                        {update.disaster_type.replace(/_/g, ' ').toUpperCase()}
+                        <span className="text-capitalize">{update.disaster_type.replace(/_/g, ' ')}</span>
                       </td>
-                      <td>{update.location}</td>
+                      <td className="fw-bold">{update.title}</td>
                       <td>
                         <Badge bg={getSeverityColor(update.severity)}>
-                          {update.severity === 1 ? 'Low' : update.severity === 2 ? 'Medium' : 'High'}
+                          {getSeverityLabel(update.severity)}
                         </Badge>
                       </td>
+                      <td>
+                        <small className="text-muted" style={{fontSize: '0.8rem'}}>{update.declaration_display}</small>
+                      </td>
+                      <td>{update.location}</td>
+                      <td className="text-center">{getAssistanceIcon(update.assistance_available)}</td>
                       <td>{update.source}</td>
                       <td>
-                        <Button
-                          variant="link"
-                          onClick={() => {
-                            window.open(update.url, '_blank');
-                          }}
-                        >
-                          View Details
-                        </Button>
+                        {update.url ? (
+                          <Button
+                            size="sm"
+                            variant="outline-primary"
+                            onClick={() => window.open(update.url, '_blank')}
+                          >
+                            Details
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline-secondary" disabled>No Link</Button>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </Table>
             </div>
           )}
         </Card.Body>

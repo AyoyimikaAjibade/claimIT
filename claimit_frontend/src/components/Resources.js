@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { Container, Row, Col, Form, Card } from 'react-bootstrap';
 import { FaSearch, FaExternalLinkAlt, FaExclamationTriangle } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
@@ -22,7 +22,7 @@ const Resources = () => {
     { id: 'contact', label: 'Contact Information' }
   ];
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/api/resources/`,
@@ -40,11 +40,11 @@ const Resources = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [authToken]);
 
   useEffect(() => {
     fetchResources();
-  }, [authToken]);
+  }, [authToken, fetchResources]);
 
   // Filter resources based on search term and category
   const filteredResources = resources.filter(resource => {
